@@ -1132,7 +1132,7 @@ function findAnswer(question) {
   scored.sort(function(a, b) { return b.score - a.score; });
 
   // Return best match if score is meaningful
-  if (scored.length > 0 && scored[0].score >= 3) {
+  if (scored.length > 0 && scored[0].score >= 1) {
     return scored[0].item;
   }
 
@@ -1216,26 +1216,27 @@ function askQuestion() {
 
   // Find answer (with tiny delay for UX)
   setTimeout(function() {
-    var indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.remove();
-
-    var result = findAnswer(question);
-    if (result) {
-      addChatMessage('bot', { answer: result.answer, question: result.question }, {
-        plantColor: result.plantColor,
-        plantEmoji: result.plantEmoji,
-        plantName: result.plantName
-      });
-
-      // Also show source question if available
-      if (result.question && result.question.indexOf('基本信息') < 0) {
-        // Already handled in addChatMessage
+    try {
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      var result = findAnswer(question);
+      if (result) {
+        addChatMessage('bot', { answer: result.answer, question: result.question }, {
+          plantColor: result.plantColor,
+          plantEmoji: result.plantEmoji,
+          plantName: result.plantName
+        });
+      } else {
+        addChatMessage('bot', {
+          answer: '我暂时没找到这个问题的答案...\n试试下面的示例问题，或者换个问法？',
+          question: ''
+        }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
       }
-    } else {
+    } catch(e) {
       addChatMessage('bot', {
-        answer: '这个问题我还没有学到呢 🤔\n试试点击上面的示例问题，或者换个问法吧！',
+        answer: 'Oops！出了点小问题，请截屏告诉老师:\n' + e.message,
         question: ''
-      }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+      }, { plantColor: '#E53935', plantEmoji: '⚠️', plantName: '报错' });
     }
   }, 300);
 }
