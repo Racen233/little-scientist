@@ -1112,7 +1112,7 @@ function findAnswer(question) {
     var questionWords = ['什么', '怎么', '为什么', '如何', '多久', '多少', '几', '吗', '能', '可以', '会', '是不是', '有没有'];
     for (var j = 0; j < questionWords.length; j++) {
       if (q.indexOf(questionWords[j]) >= 0) {
-        if (item.q.indexOf(questionWords[j]) >= 0) {
+        if (item.question && item.question.indexOf(questionWords[j]) >= 0) {
           score += 3;
         }
         break;
