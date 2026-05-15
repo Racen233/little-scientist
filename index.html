@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小小科学家 - 植物探索</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #F0F7F0;
+    color: #2D3436;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .header {
+    background: linear-gradient(135deg, #43A047 0%, #66BB6A 100%);
+    padding: 48px 24px 24px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(67,160,71,0.2);
+    position: relative;
+  }
+  .header h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .header p { font-size: 14px; color: #E8F5E9; margin-bottom: 2px; }
+  .header .subtitle { font-size: 11px; color: #C8E6C9; letter-spacing: 2px; font-weight: 300; }
+
+  /* User Greeting */
+  .greeting-card {
+    background: #fff;
+    margin: -20px 16px 0;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 2;
+  }
+  .greeting-card .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #E8F5E9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .greeting-card .info { flex: 1; }
+  .greeting-card .info .name { font-size: 15px; font-weight: 600; }
+  .greeting-card .info .hint { font-size: 12px; color: #90A490; margin-top: 2px; }
+  .greeting-card input {
+    border: none;
+    background: #F5FBF5;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 140px;
+    outline: none;
+    font-family: inherit;
+    transition: box-shadow 0.2s;
+  }
+  .greeting-card input:focus { box-shadow: 0 0 0 2px #81C784; }
+  .greeting-card .btn-name {
+    background: #43A047;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Tab Bar */
+  .tab-bar {
+    display: flex;
+    margin: 12px 16px 0;
+    background: #E8F0E8;
+    border-radius: 24px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    border: none;
+    background: transparent;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #90A490;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .tab-btn.active {
+    background: #fff;
+    color: #43A047;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* Section */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 16px 16px 10px;
+  }
+  .section-header h2 { font-size: 18px; font-weight: 700; }
+  .section-header span { font-size: 12px; color: #90A490; }
+
+  /* Plant Cards */
+  .plant-list { padding: 0 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .plant-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .plant-card:active { transform: scale(0.98); }
+  .plant-card .accent {
+    width: 6px; height: 44px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .plant-card .emoji { font-size: 24px; width: 32px; text-align: center; }
+  .plant-card .info { flex: 1; }
+  .plant-card .info .name { font-size: 15px; font-weight: 600; }
+  .plant-card .info .meta { font-size: 11px; color: #90A490; margin-top: 2px; }
+  .plant-card .arrow { font-size: 18px; color: #B2BEC3; }
+
+  /* Plant Detail */
+  .detail-page {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #F0F7F0;
+    z-index: 100;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .detail-page.show { display: block; }
+  .detail-header {
+    padding: 48px 24px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .detail-header .big-emoji { font-size: 48px; margin-bottom: 8px; }
+  .detail-header h2 { font-size: 28px; font-weight: 800; color: #fff; }
+  .detail-header .sub { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+  .detail-header .flower-lang { font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; margin-top: 4px; }
+  .back-btn {
+    position: absolute;
+    top: 52px; left: 16px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qa-list { padding: 16px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
+  .qa-item {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .qa-item .q { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #2D3436; }
+  .qa-item .a { font-size: 13px; color: #636E72; line-height: 1.6; }
+
+  /* Growth Record */
+  .growth-page { padding: 0 16px 30px; display: none; }
+  .growth-page.show { display: block; }
+
+  /* Date & plant selector */
+  .record-form { display: flex; flex-direction: column; gap: 14px; }
+  .form-row { display: flex; gap: 10px; }
+  .form-row select, .form-row input {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: #F5FBF5;
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    color: #2D3436;
+  }
+  .form-row select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2390A490' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+  /* Photo Upload */
+  .photo-upload {
+    border: 2px dashed #C8E6C9;
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    background: #F5FBF5;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .photo-upload:active { background: #E8F5E9; }
+  .photo-upload .icon { font-size: 32px; color: #81C784; margin-bottom: 6px; }
+  .photo-upload .text { font-size: 13px; color: #90A490; }
+  .photo-upload input[type="file"] { display: none; }
+  .photo-upload .preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 10px;
+    object-fit: contain;
+  }
+  .photo-upload .remove-photo {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+  }
+  .photo-upload.has-photo .remove-photo { display: flex; align-items: center; justify-content: center; }
+  .photo-upload.has-photo .icon, .photo-upload.has-photo .text { display: none; }
+  .remove-photo-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+  }
+
+  /* Diary */
+  .diary-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .diary-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .diary-card textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: none;
+    background: #F5FBF5;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+  }
+  .diary-card textarea:focus { box-shadow: 0 0 0 2px #81C784; }
+
+  /* Save Button */
+  .btn-save {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(67,160,71,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-save:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(67,160,71,0.3); }
+
+  /* History */
+  .history-section { margin-top: 24px; }
+  .history-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .history-item {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    display: flex;
+    gap: 12px;
+  }
+  .history-item .thumb {
+    width: 64px; height: 64px;
+    border-radius: 10px;
+    background: #F5FBF5;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .history-item .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .history-item .thumb .no-photo { font-size: 24px; opacity: 0.3; }
+  .history-item .hist-info { flex: 1; }
+  .history-item .hist-info .hist-date { font-size: 12px; color: #90A490; }
+  .history-item .hist-info .hist-plant { font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .history-item .hist-info .hist-diary { font-size: 13px; color: #636E72; line-height: 1.5; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #90A490;
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Modal for name input */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 24px 20px;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .modal-box p { font-size: 13px; color: #636E72; margin-bottom: 16px; line-height: 1.5; }
+  .modal-box input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #E8F0E8;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .modal-box input:focus { border-color: #81C784; }
+  .modal-box .btn-start {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #F0F7F0; }
+  ::-webkit-scrollbar-thumb { background: #C8E6C9; border-radius: 2px; }
+
+  @media (max-width: 360px) {
+    .greeting-card input { width: 100px; }
+    .header h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Offline support -->
+<div id="app">
+
+<!-- Header -->
+<div class="header">
+  <h1>🌱 小小科学家</h1>
+  <p>探索植物世界的奥秘</p>
+  <div class="subtitle">交大文创学院 · 六一文创礼盒</div>
+</div>
+
+<!-- Greeting Card -->
+<div class="greeting-card" id="greetingCard">
+  <div class="avatar" id="avatarDisplay">🌱</div>
+  <div class="info" id="greetingInfo">
+    <div class="name" id="greetingName">你好，小小科学家！</div>
+    <div class="hint" id="greetingHint">输入你的名字开始探索吧</div>
+  </div>
+  <input type="text" id="nameInput" placeholder="输入你的名字" maxlength="10">
+  <button class="btn-name" id="btnSetName">确定</button>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="knowledge">🌿 知识问答</button>
+  <button class="tab-btn" data-tab="growth">📸 成长记录</button>
+</div>
+
+<!-- Section: Knowledge Q&A -->
+<div id="tabKnowledge">
+  <div class="section-header">
+    <h2>🔬 植物知识问答</h2>
+    <span id="plantCount">10种植物</span>
+  </div>
+  <div class="plant-list" id="plantList"></div>
+</div>
+
+<!-- Section: Growth Record -->
+<div class="growth-page" id="tabGrowth">
+  <div class="section-header">
+    <h2>📸 我的成长记录</h2>
+  </div>
+
+  <div class="record-form">
+    <div class="form-row">
+      <select id="growthPlant"><option value="">选择植物</option></select>
+      <input type="date" id="growthDate">
+    </div>
+
+    <div class="photo-upload" id="photoUpload" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+      <div class="icon">📷</div>
+      <div class="text">点击拍摄或上传植物照片</div>
+      <img class="preview" id="photoPreview" alt="">
+      <button class="remove-photo" id="removePhoto" onclick="event.stopPropagation(); clearPhoto()">✕</button>
+    </div>
+
+    <div class="diary-card">
+      <h3>📝 观察日记</h3>
+      <textarea id="diaryInput" placeholder="今天你的植物有什么变化？它发芽了吗？长高了多少？你有什么发现？..." rows="4"></textarea>
+    </div>
+
+    <button class="btn-save" onclick="saveRecord()">💾  保存今天的记录</button>
+  </div>
+
+  <!-- History -->
+  <div class="history-section" id="historySection">
+    <h3>📖 成长日记</h3>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<!-- Plant Detail Page -->
+<div class="detail-page" id="detailPage">
+  <div class="detail-header" id="detailHeader">
+    <button class="back-btn" onclick="closeDetail()">←</button>
+    <div class="big-emoji" id="detailEmoji"></div>
+    <h2 id="detailName"></h2>
+    <div class="sub" id="detailSub"></div>
+    <div class="flower-lang" id="detailFlowerLang"></div>
+  </div>
+  <div class="qa-list" id="qaList"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Name Modal (first visit) -->
+<div class="modal-overlay" id="nameModal">
+  <div class="modal-box">
+    <h2>🌱 欢迎你，小小科学家！</h2>
+    <p>在开始探索之前，请告诉我你的名字吧～这样你的专属植物世界就会为你打开！</p>
+    <input type="text" id="modalNameInput" placeholder="你的名字" maxlength="10">
+    <button class="btn-start" onclick="setFirstTimeName()">开始探索 →</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ======== Plant Data ========
+const PLANTS = [
+  { id: 'morning-glory', name: '牵牛花', eng: 'Morning Glory', emoji: '🌸', color: '#9C27B0', keyword: '勤奋',
+    flowerLang: '名誉、爱情永固',
+    qa: [
+      { q: '🌱 牵牛花的种子长什么样？', a: '牵牛花的种子是黑色的，呈三棱形，像一个小小的瓜子。种皮比较坚硬，种之前最好泡水一夜，更容易发芽哦！' },
+      { q: '💧 牵牛花喜欢什么样的环境？', a: '牵牛花喜欢阳光充足的环境，但也耐半阴。浇水要见干见湿，不要积水，不然根部容易腐烂。' },
+      { q: '🌿 牵牛花的茎有什么特别之处？', a: '牵牛花是缠绕藤本植物，它的茎会顺着支撑物向右旋转攀爬，就像在跳舞一样！给它搭个架子，它能爬得很高。' },
+      { q: '🌸 牵牛花为什么叫"牵牛"？', a: '因为它的花朵像一个个小喇叭，古人觉得它像牛角，所以叫"牵牛花"。它还有一个名字叫"喇叭花"！' },
+      { q: '⏰ 牵牛花什么时候开花？', a: '牵牛花通常在清晨4-5点开花，所以又叫"朝颜花"。到了中午花朵就会慢慢闭合，是不是很有趣？' }
+    ]
+  },
+  { id: 'cosmos', name: '波斯菊', eng: 'Cosmos', emoji: '🌺', color: '#E91E63', keyword: '纯真',
+    flowerLang: '纯真、永远快乐',
+    qa: [
+      { q: '🌱 波斯菊的种子容易种吗？', a: '波斯菊的种子是细长的褐色小棍，非常容易种植！它生长很快，播种后大约7-10天就会发芽，是入门级的好选择。' },
+      { q: '☀️ 波斯菊喜欢阳光吗？', a: '波斯菊非常喜欢阳光！它是一种向光性很强的植物。最好种在阳光充足的地方，光照不足会导致它只长叶子不开花。' },
+      { q: '💧 波斯菊怕水吗？', a: '波斯菊比较耐旱，怕水涝。浇水不宜过多，保持土壤稍微干燥反而长得更好。这就是为什么它被称为"懒人花"。' },
+      { q: '🌸 波斯菊的花瓣为什么不一样？', a: '波斯菊有单瓣和重瓣两种类型。单瓣有8片花瓣围绕黄色花心排列，像个小盘子。它的花色有粉红、白、紫红等多种颜色！' },
+      { q: '📏 波斯菊能长多高？', a: '波斯菊可以长到1-2米高！它的茎细长挺拔，风一吹就会轻轻摇摆，在花园里像一群跳舞的精灵。' }
+    ]
+  },
+  { id: 'baby-breath', name: '满天星', eng: "Baby's Breath", emoji: '⭐', color: '#9E9E9E', keyword: '希望',
+    flowerLang: '思念、清纯、希望',
+    qa: [
+      { q: '🌱 满天星的种子是什么样的？', a: '满天星的种子非常细小，像灰尘一样，所以播种时不用覆土太厚，轻轻撒在土面上就好。种子细小但生命力顽强！' },
+      { q: '💧 满天星浇水要注意什么？', a: '满天星极怕水涝！浇水要遵循"干透浇透"的原则。它的根是肉质根，积水容易烂根。宁可干一点，也不要浇太多水。' },
+      { q: '☀️ 满天星需要多少阳光？', a: '满天星喜欢充足的阳光，每天至少需要4-6小时的直射光照。光照足才能开出繁密的小白花。' },
+      { q: '🌸 满天星为什么叫"满天星"？', a: '因为它会开出密密麻麻的白色小花，像满天的星星一样闪烁。每朵小花只有米粒大小，但成片开放时非常壮观！' },
+      { q: '🌿 满天星可以用来做什么？', a: '满天星是非常受欢迎的切花材料！它经常被用作花束的配花，干花也非常好看。它的花枝纤细优雅，插在花瓶里可以观赏很久。' }
+    ]
+  },
+  { id: 'cornflower', name: '矢车菊', eng: 'Cornflower', emoji: '💙', color: '#2196F3', keyword: '遇见',
+    flowerLang: '遇见、幸福、精致',
+    qa: [
+      { q: '🌱 矢车菊的种子好种吗？', a: '矢车菊的种子是灰褐色的瘦果，顶端有一撮小冠毛。播种前最好将种子放在冰箱冷藏一周左右，模拟冬天的环境，有助于发芽。' },
+      { q: '💙 为什么矢车菊是蓝色的？', a: '矢车菊最著名的就是它独特的蓝色！这种蓝色来自花瓣中的花青素。矢车菊被认为是德国国花，蓝色的矢车菊象征着细致和优雅。' },
+      { q: '☀️ 矢车菊喜欢什么样的环境？', a: '矢车菊喜欢凉爽、阳光充足的环境。它比较耐寒但不耐炎热，夏天高温时需要适当遮阴。最适合它的生长温度是15-25°C。' },
+      { q: '📏 矢车菊的根有什么特点？', a: '矢车菊是直根系植物，有很粗壮的主根，所以它比较耐旱。但也因为主根发达，它不太适合移栽，最好直接播种在它要生长的地方。' },
+      { q: '🌸 矢车菊的花期有多长？', a: '矢车菊的花期在春末到夏季，大约可以持续2-3个月。及时剪掉凋谢的花朵，可以促进新花苞的生长，延长花期哦！' }
+    ]
+  },
+  { id: 'zinnia', name: '百日草', eng: 'Zinnia', emoji: '🌼', color: '#FF5722', keyword: '坚持',
+    flowerLang: '思念远方、坚持、恒心',
+    qa: [
+      { q: '🌱 百日草为什么叫这个名字？', a: '因为它的花期可以持续约100天！从夏季一直开到秋天，是花期最长的草本花卉之一，所以叫"百日草"，象征着坚持和恒心。' },
+      { q: '🌱 百日草的种子什么样？', a: '百日草的种子像扁平的小树叶，颜色是灰褐色。播种后3-5天就会发芽，生长速度非常快。种下后很快就能看到花！' },
+      { q: '☀️ 百日草喜欢哪些条件？', a: '百日草喜欢温暖、阳光充足的生长环境。它非常耐热，夏天高温也照常生长开花。但要注意通风，避免白粉病。' },
+      { q: '🌸 百日草的花色有哪些？', a: '百日草的花色非常丰富，有红、橙、黄、粉、白、紫等多种颜色。花瓣形态也有单瓣、重瓣、皱瓣等不同品种。' },
+      { q: '💧 百日草要怎么养护？', a: '百日草浇水要浇在根部，尽量避免浇在叶片上。它的叶子容易得白粉病，所以要保证通风良好。定期摘除残花，可以开得更久！' }
+    ]
+  },
+  { id: 'impatiens', name: '凤仙花', eng: 'Impatiens', emoji: '🌷', color: '#FF4081', keyword: '勇敢',
+    flowerLang: '怀念过去、勇敢、敏捷',
+    qa: [
+      { q: '🌱 凤仙花为什么又叫"指甲花"？', a: '因为凤仙花的花瓣捣碎后可以染指甲！把花瓣加明矾捣成泥，敷在指甲上包好，第二天指甲就会变成漂亮的橘红色。这是古代女孩子的天然指甲油。' },
+      { q: '🌸 凤仙花的果实有什么特别之处？', a: '凤仙花的果实像一个迷你小炸弹！成熟时只要轻轻一碰，果皮就会弹开把种子弹射出去，所以它又叫"急性子"、"别碰我"。' },
+      { q: '🌿 凤仙花喜欢什么环境？', a: '凤仙花喜欢温暖湿润、半阴的环境。它不太耐晒，适合种在树荫下或者朝北的阳台上。阳光太强反而会让它长不好。' },
+      { q: '💧 凤仙花怕旱吗？', a: '凤仙花喜欢湿润，需要保持土壤湿润但不要积水。夏天干燥时叶片容易蔫，要及时浇水。叶子上喷点水雾也会让它更开心！' },
+      { q: '📏 凤仙花能长多大？', a: '凤仙花一般可以长到30-80厘米高。它的茎是肉质的，看起来胖胖的、半透明。花色有白、粉、红、紫等多种，非常漂亮！' }
+    ]
+  },
+  { id: 'calendula', name: '金盏菊', eng: 'Calendula', emoji: '🌻', color: '#FFC107', keyword: '平安',
+    flowerLang: '平安、健康、吉祥',
+    qa: [
+      { q: '🌱 金盏菊的名字是怎么来的？', a: '金盏菊的名字来自它金色的花朵形状像小杯子（"盏"就是小杯子的意思）。它的英文名Calendula在拉丁语中是"每月"的意思，因为它每个月都能开花。' },
+      { q: '💊 金盏菊有什么用途？', a: '金盏菊不仅好看，还有很高的药用价值！它的花瓣可以泡茶，有消炎杀菌的作用。金盏菊提取物也常用在护肤霜中，对皮肤很好。' },
+      { q: '☀️ 金盏菊喜欢什么样的环境？', a: '金盏菊喜欢凉爽、阳光充足的天气。它很耐寒但不耐热，夏天高温时要适当遮阴。15-20°C是它最喜欢的温度。' },
+      { q: '🌱 金盏菊的种子长什么样？', a: '金盏菊的种子形状很特别，像一个小小的"C"形或弯曲的虫子，表面有凸起的刺状结构。每个种子的形状都不太一样！' },
+      { q: '🌸 金盏菊的花有什么特点？', a: '金盏菊的花朵有单瓣和重瓣两种，花瓣在晚上会闭合，早上再打开，像在睡觉和起床一样。它的花色主要是明亮的黄色和橙色。' }
+    ]
+  },
+  { id: 'sunflower', name: '向日葵', eng: 'Sunflower', emoji: '🌻', color: '#FF6F00', keyword: '阳光',
+    flowerLang: '信念、光辉、忠诚、阳光',
+    qa: [
+      { q: '🌱 向日葵的种子是什么样的？', a: '向日葵的种子就是我们常吃的瓜子！它是黑白色条纹的椭圆形瘦果，非常容易辨认。种下去的时候要把尖头朝下哦！' },
+      { q: '☀️ 向日葵真的会跟着太阳转吗？', a: '是的，在生长期！向日葵的花盘在幼嫩时会从东向西跟随太阳转动，到了晚上再慢慢转回东边，等待第二天早上的太阳。不过开花后花盘基本固定朝东了。' },
+      { q: '💧 向日葵多久浇一次水？', a: '发芽期每天浇水保持土壤湿润，成长期2-3天浇一次即可。向日葵根系发达，比较耐旱，但生长期需水量大，天热时要注意及时补水。' },
+      { q: '📏 向日葵能长多高？', a: '普通品种可以长到1-3米高！世界上最高的向日葵品种可以长到7米以上，比两层楼还高。向日葵是世界上最高的草本植物之一。' },
+      { q: '🌸 向日葵多久能开花？', a: '从播种到开花大约需要50-80天。花期可持续2-3周。向日葵的花盘其实是由成百上千朵小花组成的，边缘的"花瓣"是舌状花，中间的"花心"是管状花。' }
+    ]
+  },
+  { id: 'china-aster', name: '翠菊', eng: 'China Aster', emoji: '💜', color: '#7B1FA2', keyword: '探索',
+    flowerLang: '探索、变化、信赖',
+    qa: [
+      { q: '🌱 翠菊为什么叫"翠菊"？', a: '因为它的叶子是翠绿色的，花朵色彩丰富艳丽，所以叫"翠菊"。它原产于中国，在国外被称为"China Aster"（中国紫菀），是很有名的中国花卉！' },
+      { q: '🌸 翠菊的花有什么特点？', a: '翠菊的花很像小菊花，有紫色、蓝色、粉色、白色等多种颜色。花瓣层层叠叠非常漂亮。它的花有两种形态：舌状花在外围，管状花在中间。' },
+      { q: '🌿 翠菊喜欢什么环境？', a: '翠菊喜欢阳光充足、通风良好的环境。它比较耐寒但不耐炎热，夏天需要适当遮阴。最适合的温度是15-25°C。' },
+      { q: '💧 翠菊要怎么浇水？', a: '翠菊浇水要保持"见干见湿"的原则。它怕水涝，也怕干旱。浇水时尽量浇在根部，不要浇到叶子和花上，可以减少病害。' },
+      { q: '📏 翠菊能长多高？', a: '翠菊的高度因品种而异，矮生品种只有20-30厘米，适合盆栽；高杆品种可以长到60-80厘米，适合做切花。' }
+    ]
+  },
+  { id: 'cockscomb', name: '鸡冠花', eng: 'Cockscomb', emoji: '❤️', color: '#D32F2F', keyword: '热情',
+    flowerLang: '热情、真挚、永恒',
+    qa: [
+      { q: '🌱 鸡冠花为什么叫这个名字？', a: '因为它的花序像大公鸡的鸡冠一样，鲜红艳丽，所以叫"鸡冠花"。它的花序其实是由很多小花密集排列组成的，非常特别！' },
+      { q: '🌸 鸡冠花只有红色吗？', a: '不是的！鸡冠花除了最常见的红色，还有黄色、橙色、紫色、粉色等多种颜色。还有一种羽毛状的品种，花序像羽毛一样柔软蓬松。' },
+      { q: '🌿 鸡冠花好种吗？', a: '鸡冠花非常好种！它对土壤要求不高，耐旱耐热，生命力顽强。种子细小，播种后不覆土或覆薄薄一层土即可。发芽适温20-25°C。' },
+      { q: '☀️ 鸡冠花喜欢阳光吗？', a: '鸡冠花非常喜欢阳光！它是典型的阳性花卉，需要充足的直射光照才能开花鲜艳。光照不足会导致花色暗淡、花序变小。' },
+      { q: '💧 鸡冠花有什么特别之处？', a: '鸡冠花的花期很长，可以从夏季一直开到秋天！而且它的花朵干了之后也不会褪色，可以做干花长期保存。鸡冠花还是中医药材，有止血的功效。' }
+    ]
+  }
+];
+
+// ======== User State ========
+const STORAGE_KEY_PREFIX = 'scientist_';
+
+function getUserId() { return localStorage.getItem(STORAGE_KEY_PREFIX + 'userId'); }
+function getUserName() { return localStorage.getItem(STORAGE_KEY_PREFIX + 'userName') || ''; }
+function getRecords() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PREFIX + 'records_' + getUserId()) || '[]'); } catch { return []; }
+}
+function saveRecords(records) {
+  localStorage.setItem(STORAGE_KEY_PREFIX + 'records_' + getUserId(), JSON.stringify(records));
+}
+
+function generateId() {
+  return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+}
+
+// ======== Init ========
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if user exists
+  if (!getUserId() || !getUserName()) {
+    document.getElementById('nameModal').classList.add('show');
+    document.getElementById('modalNameInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') setFirstTimeName();
+    });
+    setTimeout(function() { document.getElementById('modalNameInput').focus(); }, 500);
+  } else {
+    setGreeting(getUserName());
+  }
+
+  renderPlantList();
+  renderPlantSelect();
+  setDefaultDate();
+  renderHistory();
+
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var tab = btn.dataset.tab;
+      document.getElementById('tabKnowledge').style.display = tab === 'knowledge' ? 'block' : 'none';
+      document.getElementById('tabGrowth').classList.toggle('show', tab === 'growth');
+    });
+  });
+
+  // Name input
+  document.getElementById('btnSetName').addEventListener('click', function() {
+    var name = document.getElementById('nameInput').value.trim();
+    if (name) {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'userName', name);
+      setGreeting(name);
+      showToast('名字已更新！');
+    }
+  });
+
+  // Photo upload
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var preview = document.getElementById('photoPreview');
+        preview.src = ev.target.result;
+        document.getElementById('photoUpload').classList.add('has-photo');
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  });
+});
+
+function setFirstTimeName() {
+  var name = document.getElementById('modalNameInput').value.trim();
+  if (!name) { showToast('请输入你的名字哦～'); return; }
+  if (!getUserId()) localStorage.setItem(STORAGE_KEY_PREFIX + 'userId', generateId());
+  localStorage.setItem(STORAGE_KEY_PREFIX + 'userName', name);
+  document.getElementById('nameModal').classList.remove('show');
+  setGreeting(name);
+  renderHistory();
+}
+
+function setGreeting(name) {
+  document.getElementById('greetingName').textContent = '你好，' + name + '！';
+  document.getElementById('greetingHint').textContent = '来探索植物世界的奥秘吧 🌱';
+  document.getElementById('nameInput').value = name;
+  document.getElementById('avatarDisplay').textContent = getAvatarForName(name);
+  document.getElementById('greetingCard').querySelector('.btn-name').textContent = '✓';
+}
+
+function getAvatarForName(name) {
+  var avatars = ['🌱', '🌿', '🌸', '🌻', '🌺', '⭐', '💙', '🌼', '🌷', '💜', '❤️', '🌾'];
+  var hash = name.split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
+  return avatars[hash % avatars.length];
+}
+
+// ======== Plant List ========
+function renderPlantList() {
+  var container = document.getElementById('plantList');
+  container.innerHTML = PLANTS.map(function(p) {
+    return '<div class="plant-card" onclick="openDetail(\'' + p.id + '\')">' +
+      '<div class="accent" style="background:' + p.color + '"></div>' +
+      '<div class="emoji">' + p.emoji + '</div>' +
+      '<div class="info"><div class="name">' + p.name + '</div>' +
+      '<div class="meta">' + p.eng + ' · 关键词：' + p.keyword + '</div></div>' +
+      '<div class="arrow">→</div></div>';
+  }).join('');
+  document.getElementById('plantCount').textContent = PLANTS.length + '种植物';
+}
+
+// ======== Plant Detail ========
+function openDetail(plantId) {
+  var plant = PLANTS.find(function(p) { return p.id === plantId; });
+  if (!plant) return;
+  var header = document.getElementById('detailHeader');
+  header.style.background = 'linear-gradient(135deg, ' + plant.color + 'CC, ' + plant.color + ')';
+  document.getElementById('detailEmoji').textContent = plant.emoji;
+  document.getElementById('detailName').textContent = plant.name;
+  document.getElementById('detailSub').innerHTML = plant.eng + '  ·  关键词：' + plant.keyword;
+  document.getElementById('detailFlowerLang').textContent = '花语：' + plant.flowerLang;
+
+  var qaContainer = document.getElementById('qaList');
+  qaContainer.innerHTML = plant.qa.map(function(item) {
+    return '<div class="qa-item"><div class="q">' + item.q + '</div><div class="a">' + item.a + '</div></div>';
+  }).join('');
+
+  document.getElementById('detailPage').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detailPage').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ======== Growth Record ========
+function renderPlantSelect() {
+  var sel = document.getElementById('growthPlant');
+  sel.innerHTML = '<option value="">选择植物</option>' +
+    PLANTS.map(function(p) { return '<option value="' + p.id + '">' + p.emoji + ' ' + p.name + '</option>'; }).join('');
+}
+
+function setDefaultDate() {
+  var d = new Date();
+  document.getElementById('growthDate').value = d.toISOString().split('T')[0];
+}
+
+function clearPhoto() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('photoUpload').classList.remove('has-photo');
+}
+
+function saveRecord() {
+  var plantId = document.getElementById('growthPlant').value;
+  var date = document.getElementById('growthDate').value;
+  var diary = document.getElementById('diaryInput').value.trim();
+  var preview = document.getElementById('photoPreview');
+  var photo = preview.src || '';
+
+  if (!plantId) { showToast('请选择你观察的植物 🌱'); return; }
+  if (!diary) { showToast('写一点观察日记吧 📝'); return; }
+
+  var records = getRecords();
+  records.unshift({
+    id: Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    plantId: plantId,
+    date: date,
+    diary: diary,
+    photo: photo,
+    timestamp: Date.now()
+  });
+  saveRecords(records);
+
+  // Reset form
+  clearPhoto();
+  document.getElementById('diaryInput').value = '';
+  setDefaultDate();
+
+  showToast('🎉 记录已保存！继续加油哦！');
+  renderHistory();
+}
+
+function renderHistory() {
+  var container = document.getElementById('historyList');
+  var records = getRecords();
+
+  if (records.length === 0) {
+    container.innerHTML = '<div class="empty-state">' +
+      '<div class="icon">🌱</div>' +
+      '<p>还没有成长记录呢～<br>种下你的种子，开始观察记录吧！</p></div>';
+    return;
+  }
+
+  container.innerHTML = records.map(function(r) {
+    var plant = PLANTS.find(function(p) { return p.id === r.plantId; });
+    var plantName = plant ? plant.emoji + ' ' + plant.name : '未知植物';
+    var photoHtml = r.photo ?
+      '<img src="' + r.photo + '" alt="植物照片" loading="lazy">' :
+      '<div class="no-photo">🌱</div>';
+    var dateStr = r.date || new Date(r.timestamp).toLocaleDateString('zh-CN');
+    return '<div class="history-item">' +
+      '<div class="thumb">' + photoHtml + '</div>' +
+      '<div class="hist-info">' +
+      '<div class="hist-date">' + dateStr + '</div>' +
+      '<div class="hist-plant">' + plantName + '</div>' +
+      '<div class="hist-diary">' + escapeHtml(r.diary) + '</div></div></div>';
+  }).join('');
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+// ======== Toast ========
+function showToast(msg) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+</script>
+</body>
+</html>
