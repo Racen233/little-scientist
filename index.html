@@ -618,7 +618,37 @@ function getRecords() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PREFIX + 'records_' + getUserId()) || '[]'); } catch { return []; }
 }
 function saveRecords(records) {
-  localStorage.setItem(STORAGE_KEY_PREFIX + 'records_' + getUserId(), JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + 'records_' + getUserId(), JSON.stringify(records));
+    return true;
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      // Photo too large, try saving without photos
+      var stripped = records.map(function(r) {
+        var copy = Object.assign({}, r);
+        if (copy.photo && copy.photo.length > 50000) copy.photo = '[照片过大已压缩]';
+        return copy;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'records_' + getUserId(), JSON.stringify(stripped));
+        return true;
+      } catch (e2) {
+        // Still failing, save text-only
+        var textOnly = records.map(function(r) {
+          var copy = Object.assign({}, r);
+          copy.photo = '';
+          return copy;
+        });
+        try {
+          localStorage.setItem(STORAGE_KEY_PREFIX + 'records_' + getUserId(), JSON.stringify(textOnly));
+          return true;
+        } catch (e3) {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
 }
 
 function generateId() {
@@ -769,6 +799,11 @@ function saveRecord() {
   if (!plantId) { showToast('请选择你观察的植物 🌱'); return; }
   if (!diary) { showToast('写一点观察日记吧 📝'); return; }
 
+  // Compress photo if too large (reduce to thumbnail size)
+  if (photo && photo.length > 200000) {
+    photo = compressImage(preview, photo);
+  }
+
   var records = getRecords();
   records.unshift({
     id: Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -778,7 +813,12 @@ function saveRecord() {
     photo: photo,
     timestamp: Date.now()
   });
-  saveRecords(records);
+
+  var saved = saveRecords(records);
+  if (!saved) {
+    showToast('😅 存储空间不足，请清理旧记录或不上传照片');
+    return;
+  }
 
   // Reset form
   clearPhoto();
@@ -787,6 +827,24 @@ function saveRecord() {
 
   showToast('🎉 记录已保存！继续加油哦！');
   renderHistory();
+}
+
+function compressImage(imgEl, fallbackUrl) {
+  var maxW = 300;
+  try {
+    var w = imgEl.naturalWidth || 1200;
+    var h = imgEl.naturalHeight || 1200;
+    if (w <= maxW) return fallbackUrl;
+    var ratio = maxW / w;
+    var canvas = document.createElement('canvas');
+    canvas.width = maxW;
+    canvas.height = h * ratio;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.6);
+  } catch(e) {
+    return fallbackUrl.slice(0, 100000);
+  }
 }
 
 function renderHistory() {
