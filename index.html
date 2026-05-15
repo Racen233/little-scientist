@@ -327,6 +327,83 @@
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .empty-state p { font-size: 14px; line-height: 1.6; }
 
+  /* ====== Diary Detail ====== */
+  .diary-detail-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #F0F7F0;
+    z-index: 150;
+    display: none;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+  .diary-detail-overlay.show { display: block; }
+  .diary-detail-header {
+    padding: 48px 20px 20px;
+    position: relative;
+  }
+  .diary-detail-header .back-btn {
+    position: absolute; top: 52px; left: 16px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .diary-detail-header .dd-title { font-size: 22px; font-weight: 800; color: #fff; text-align: center; }
+  .diary-detail-header .dd-sub { font-size: 13px; color: rgba(255,255,255,0.8); text-align: center; margin-top: 4px; }
+
+  .diary-detail-body { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .dd-photo-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    text-align: center;
+  }
+  .dd-photo-card img { width: 100%; max-height: 300px; object-fit: contain; display: block; }
+  .dd-photo-card .dd-no-photo { padding: 40px; font-size: 48px; opacity: 0.2; }
+  .dd-text-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .dd-text-card .dd-label {
+    font-size: 12px; color: #90A490;
+    font-weight: 600; letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dd-text-card .dd-content {
+    font-size: 15px;
+    color: #2D3436;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .dd-actions { display: flex; gap: 12px; }
+  .dd-actions .btn-del {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    background: #FFEBEE;
+    color: #E53935;
+    transition: background 0.2s;
+  }
+  .dd-actions .btn-del:active { background: #FFCDD2; }
+
   /* ====== Q&A Chat ====== */
   .qa-chat { padding: 0 16px 20px; display: none; flex-direction: column; }
   .qa-chat.show { display: flex; }
@@ -615,6 +692,16 @@
     <h3>📖 成长日记</h3>
     <div id="historyList"></div>
   </div>
+</div>
+
+<!-- Diary Detail Overlay -->
+<div class="diary-detail-overlay" id="diaryDetail">
+  <div class="diary-detail-header" id="ddHeader">
+    <button class="back-btn" onclick="closeDiaryDetail()">←</button>
+    <div class="dd-title" id="ddTitle"></div>
+    <div class="dd-sub" id="ddSub"></div>
+  </div>
+  <div class="diary-detail-body" id="ddBody"></div>
 </div>
 
 <!-- Plant Detail Page -->
@@ -1260,17 +1347,74 @@ function renderHistory() {
   container.innerHTML = records.map(function(r) {
     var plant = PLANTS.find(function(p) { return p.id === r.plantId; });
     var plantName = plant ? plant.emoji + ' ' + plant.name : '未知植物';
+    var plantColor = plant ? plant.color : '#90A490';
     var photoHtml = r.photo ?
       '<img src="' + r.photo + '" alt="植物照片" loading="lazy">' :
       '<div class="no-photo">🌱</div>';
     var dateStr = r.date || new Date(r.timestamp).toLocaleDateString('zh-CN');
-    return '<div class="history-item">' +
-      '<div class="thumb">' + photoHtml + '</div>' +
+    return '<div class="history-item" onclick="openDiaryDetail(\'' + r.id + '\')">' +
+      '<div class="thumb" style="border:2px solid ' + plantColor + '22">' + photoHtml + '</div>' +
       '<div class="hist-info">' +
       '<div class="hist-date">' + dateStr + '</div>' +
-      '<div class="hist-plant">' + plantName + '</div>' +
+      '<div class="hist-plant" style="color:' + plantColor + '">' + plantName + '</div>' +
       '<div class="hist-diary">' + escapeHtml(r.diary) + '</div></div></div>';
   }).join('');
+}
+
+function openDiaryDetail(recordId) {
+  var records = getRecords();
+  var r = null;
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].id === recordId) { r = records[i]; break; }
+  }
+  if (!r) return;
+
+  var plant = PLANTS.find(function(p) { return p.id === r.plantId; });
+  var plantName = plant ? plant.emoji + ' ' + plant.name : '未知植物';
+  var plantColor = plant ? plant.color : '#43A047';
+  var dateStr = r.date || new Date(r.timestamp).toLocaleDateString('zh-CN');
+
+  // Set header
+  var header = document.getElementById('ddHeader');
+  header.style.background = 'linear-gradient(135deg, ' + plantColor + 'CC, ' + plantColor + ')';
+  document.getElementById('ddTitle').textContent = plantName;
+  document.getElementById('ddSub').textContent = dateStr;
+
+  // Build body
+  var photoHtml;
+  if (r.photo && r.photo.length > 100) {
+    photoHtml = '<div class="dd-photo-card"><img src="' + r.photo + '" alt="植物照片"></div>';
+  } else {
+    photoHtml = '<div class="dd-photo-card"><div class="dd-no-photo">🌱</div></div>';
+  }
+
+  document.getElementById('ddBody').innerHTML =
+    photoHtml +
+    '<div class="dd-text-card">' +
+    '<div class="dd-label">📝 观察日记</div>' +
+    '<div class="dd-content">' + escapeHtml(r.diary) + '</div>' +
+    '</div>' +
+    '<div class="dd-actions">' +
+    '<button class="btn-del" onclick="deleteDiaryRecord(\'' + recordId + '\')">🗑️ 删除这条记录</button>' +
+    '</div>';
+
+  document.getElementById('diaryDetail').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDiaryDetail() {
+  document.getElementById('diaryDetail').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function deleteDiaryRecord(recordId) {
+  if (!confirm('确定要删除这条成长记录吗？')) return;
+  var records = getRecords();
+  var newRecords = records.filter(function(r) { return r.id !== recordId; });
+  saveRecords(newRecords);
+  closeDiaryDetail();
+  renderHistory();
+  showToast('已删除');
 }
 
 function escapeHtml(text) {
