@@ -327,6 +327,126 @@
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .empty-state p { font-size: 14px; line-height: 1.6; }
 
+  /* ====== Q&A Chat ====== */
+  .qa-chat { padding: 0 16px 20px; display: none; flex-direction: column; }
+  .qa-chat.show { display: flex; }
+  .chat-messages {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 260px;
+    max-height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .chat-msg {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .chat-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-msg.bot {
+    align-self: flex-start;
+    background: #F5FBF5;
+    color: #2D3436;
+    border-bottom-left-radius: 4px;
+    position: relative;
+  }
+  .chat-msg.bot .plant-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+  .chat-msg.bot .msg-text { font-size: 13px; color: #636E72; line-height: 1.6; }
+  .chat-msg .msg-time {
+    font-size: 10px;
+    color: #B2BEC3;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .chat-msg.user .msg-time { color: rgba(255,255,255,0.5); }
+  .chat-input-area {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+  }
+  .chat-input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: #fff;
+    border-radius: 22px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .chat-input-area input:focus { box-shadow: 0 0 0 2px #81C784; }
+  .chat-input-area .btn-send {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #43A047, #66BB6A);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(67,160,71,0.3);
+  }
+  .chat-input-area .btn-send:active { transform: scale(0.95); }
+  .chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 4px;
+  }
+  .chat-suggestions .chip {
+    padding: 6px 14px;
+    background: #E8F5E9;
+    border-radius: 16px;
+    font-size: 12px;
+    color: #43A047;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .chat-suggestions .chip:active { background: #C8E6C9; }
+  .chat-welcome {
+    text-align: center;
+    padding: 30px 20px;
+    color: #90A490;
+  }
+  .chat-welcome .icon { font-size: 36px; margin-bottom: 8px; }
+  .chat-welcome p { font-size: 13px; line-height: 1.6; }
+  .chat-msg.bot .qa-source {
+    display: block;
+    font-size: 11px;
+    color: #B2BEC3;
+    margin-top: 6px;
+    border-top: 1px solid #E8F0E8;
+    padding-top: 4px;
+  }
+
   /* Toast */
   .toast {
     position: fixed;
@@ -430,6 +550,7 @@
 <!-- Tab Bar -->
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="knowledge">🌿 知识问答</button>
+  <button class="tab-btn" data-tab="qa">🤖 智能问答</button>
   <button class="tab-btn" data-tab="growth">📸 成长记录</button>
 </div>
 
@@ -440,6 +561,25 @@
     <span id="plantCount">10种植物</span>
   </div>
   <div class="plant-list" id="plantList"></div>
+</div>
+
+<!-- Section: Smart Q&A Chat -->
+<div class="qa-chat" id="tabQA">
+  <div class="section-header">
+    <h2>🤖 我来回答</h2>
+    <span>向小助手提问吧</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-welcome" id="chatWelcome">
+      <div class="icon">🌻</div>
+      <p>你好！我是植物小助手 🤖<br>关于这10种植物，你有什么想知道的吗？<br>试试问我吧！</p>
+    </div>
+  </div>
+  <div class="chat-suggestions" id="chatSuggestions"></div>
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" placeholder="输入你的问题..." maxlength="100">
+    <button class="btn-send" id="btnSend" onclick="askQuestion()">➤</button>
+  </div>
 </div>
 
 <!-- Section: Growth Record -->
@@ -670,6 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   renderPlantList();
   renderPlantSelect();
+  renderSuggestions();
   setDefaultDate();
   renderHistory();
 
@@ -680,6 +821,7 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.classList.add('active');
       var tab = btn.dataset.tab;
       document.getElementById('tabKnowledge').style.display = tab === 'knowledge' ? 'block' : 'none';
+      document.getElementById('tabQA').classList.toggle('show', tab === 'qa');
       document.getElementById('tabGrowth').classList.toggle('show', tab === 'growth');
     });
   });
@@ -705,6 +847,11 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       reader.readAsDataURL(e.target.files[0]);
     }
+  });
+
+  // Q&A Chat - Enter key to send
+  document.getElementById('chatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') askQuestion();
   });
 });
 
@@ -845,6 +992,257 @@ function compressImage(imgEl, fallbackUrl) {
   } catch(e) {
     return fallbackUrl.slice(0, 100000);
   }
+}
+
+// ======== Smart Q&A Engine ========
+// Build searchable index from all plant Q&A data
+var QA_INDEX = [];
+(function buildQAIndex() {
+  PLANTS.forEach(function(plant) {
+    plant.qa.forEach(function(item, idx) {
+      QA_INDEX.push({
+        plantId: plant.id,
+        plantName: plant.name,
+        plantEmoji: plant.emoji,
+        plantColor: plant.color,
+        question: item.q,
+        answer: item.a,
+        // Pre-compute keywords for matching
+        qKeywords: extractKeywords(item.q),
+        aKeywords: extractKeywords(item.a)
+      });
+    });
+  });
+})();
+
+// Chinese keyword extraction - split text into meaningful segments
+function extractKeywords(text) {
+  // Remove emojis and punctuation
+  var clean = text.replace(/[\u{1F000}-\u{1FFFF}]|[☀-➿]|[，。！？、；：""''（）【】《》\.,!?;:\-\[\](){}]/gu, ' ');
+  // Split by whitespace, filter short words
+  var words = [];
+  var buf = '';
+  for (var i = 0; i < clean.length; i++) {
+    var c = clean[i];
+    if (c === ' ' || c === '\n') {
+      if (buf.length >= 1) words.push(buf);
+      buf = '';
+    } else {
+      buf += c;
+    }
+  }
+  if (buf.length >= 1) words.push(buf);
+  // Also extract individual Chinese characters >= 2 for granular matching
+  var chars = [];
+  for (var j = 0; j < clean.length; j++) {
+    var ch = clean[j];
+    if (ch >= '一' && ch <= '鿿' && ch !== ' ' && ch !== '\n') {
+      chars.push(ch);
+    }
+  }
+  return { words: words, chars: chars };
+}
+
+// Check if a keyword set contains a specific term
+function hasKeyword(kwSet, term) {
+  for (var i = 0; i < kwSet.words.length; i++) {
+    if (kwSet.words[i].indexOf(term) >= 0) return true;
+  }
+  return false;
+}
+
+// Count how many query chars appear in text
+function countCharMatches(queryChars, kwSet) {
+  var count = 0;
+  for (var i = 0; i < queryChars.length; i++) {
+    for (var j = 0; j < kwSet.chars.length; j++) {
+      if (queryChars[i] === kwSet.chars[j]) { count++; break; }
+    }
+  }
+  return count;
+}
+
+// Find best matching answer for a question
+function findAnswer(question) {
+  if (!question || question.trim().length === 0) return null;
+
+  var q = question.trim();
+  var qKeywords = extractKeywords(q);
+  var qChars = qKeywords.chars;
+  var qWords = qKeywords.words;
+
+  // Detect which plant names are mentioned
+  var mentionedPlants = [];
+  PLANTS.forEach(function(p) {
+    if (q.indexOf(p.name) >= 0 || q.indexOf(p.eng.toLowerCase()) >= 0) {
+      mentionedPlants.push(p);
+    }
+  });
+
+  // Score each QA item
+  var scored = QA_INDEX.map(function(item) {
+    var score = 0;
+
+    // Big bonus if user mentioned this plant name
+    if (mentionedPlants.length > 0) {
+      var isMentioned = mentionedPlants.some(function(p) { return p.id === item.plantId; });
+      if (isMentioned) score += 20;
+    }
+
+    // Check keyword overlap in question
+    for (var i = 0; i < qWords.length; i++) {
+      var w = qWords[i];
+      if (w.length < 2) continue;
+      if (hasKeyword(item.qKeywords, w)) {
+        // Longer word match = more specific
+        score += w.length * 2;
+      }
+      if (hasKeyword(item.aKeywords, w)) {
+        score += w.length;
+      }
+    }
+
+    // Character-level matching (for partial matches)
+    var qCharScore = countCharMatches(qChars, item.qKeywords);
+    var aCharScore = countCharMatches(qChars, item.aKeywords);
+    score += qCharScore * 1.5;
+    score += aCharScore * 0.5;
+
+    // Boost if user's question contains question words
+    var questionWords = ['什么', '怎么', '为什么', '如何', '多久', '多少', '几', '吗', '能', '可以', '会', '是不是', '有没有'];
+    for (var j = 0; j < questionWords.length; j++) {
+      if (q.indexOf(questionWords[j]) >= 0) {
+        if (item.q.indexOf(questionWords[j]) >= 0) {
+          score += 3;
+        }
+        break;
+      }
+    }
+
+    // Bonus for matching longer segments (substring match)
+    if (item.question.indexOf(q) >= 0) score += 30;
+    // Check partial question match (first 4 chars)
+    if (q.length >= 4 && item.question.indexOf(q.substring(0, 4)) >= 0) score += 15;
+    if (q.length >= 6 && item.question.indexOf(q.substring(0, 6)) >= 0) score += 20;
+
+    return { item: item, score: score };
+  });
+
+  // Sort by score descending
+  scored.sort(function(a, b) { return b.score - a.score; });
+
+  // Return best match if score is meaningful
+  if (scored.length > 0 && scored[0].score >= 3) {
+    return scored[0].item;
+  }
+
+  // Fallback: if plant was mentioned but no good match, return general info
+  if (mentionedPlants.length > 0) {
+    var plant = mentionedPlants[0];
+    return {
+      plantId: plant.id,
+      plantName: plant.name,
+      plantEmoji: plant.emoji,
+      plantColor: plant.color,
+      question: plant.name + '的基本信息',
+      answer: plant.qa.map(function(qa) { return qa.a; }).join(' ')
+    };
+  }
+
+  return null;
+}
+
+// Suggestion questions
+var SUGGESTIONS = [
+  '向日葵需要多少阳光？',
+  '牵牛花为什么叫牵牛花？',
+  '什么花最好种？',
+  '凤仙花为什么叫指甲花？',
+  '金盏菊有什么用处？',
+  '满天星浇水要注意什么？'
+];
+
+function renderSuggestions() {
+  var container = document.getElementById('chatSuggestions');
+  container.innerHTML = SUGGESTIONS.map(function(q) {
+    return '<button class="chip" onclick="askSuggestion(\'' + q.replace(/'/g, "\\'") + '\')">' + q + '</button>';
+  }).join('');
+}
+
+function addChatMessage(type, content, plantInfo) {
+  var container = document.getElementById('chatMessages');
+  // Remove welcome if present
+  var welcome = document.getElementById('chatWelcome');
+  if (welcome) welcome.style.display = 'none';
+
+  var time = new Date();
+  var timeStr = time.getHours().toString().padStart(2,'0') + ':' + time.getMinutes().toString().padStart(2,'0');
+
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + type;
+
+  if (type === 'bot' && plantInfo) {
+    div.innerHTML =
+      '<span class="plant-tag" style="background:' + plantInfo.plantColor + '22;color:' + plantInfo.plantColor + '">' +
+      plantInfo.plantEmoji + ' ' + plantInfo.plantName + '</span>' +
+      '<div class="msg-text">' + escapeHtml(content.answer || content) + '</div>' +
+      (content.question ? '<span class="qa-source">参考: ' + escapeHtml(content.question) + '</span>' : '') +
+      '<div class="msg-time">' + timeStr + '</div>';
+  } else {
+    div.innerHTML = '<div class="msg-text">' + escapeHtml(content) + '</div><div class="msg-time">' + timeStr + '</div>';
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function askQuestion() {
+  var input = document.getElementById('chatInput');
+  var question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+
+  // Show user's question
+  addChatMessage('user', question);
+
+  // Show typing indicator briefly
+  var container = document.getElementById('chatMessages');
+  var typing = document.createElement('div');
+  typing.className = 'chat-msg bot';
+  typing.id = 'typingIndicator';
+  typing.innerHTML = '<div class="msg-text">🤔 思考中...</div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  // Find answer (with tiny delay for UX)
+  setTimeout(function() {
+    var indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.remove();
+
+    var result = findAnswer(question);
+    if (result) {
+      addChatMessage('bot', { answer: result.answer, question: result.question }, {
+        plantColor: result.plantColor,
+        plantEmoji: result.plantEmoji,
+        plantName: result.plantName
+      });
+
+      // Also show source question if available
+      if (result.question && result.question.indexOf('基本信息') < 0) {
+        // Already handled in addChatMessage
+      }
+    } else {
+      addChatMessage('bot', {
+        answer: '这个问题我还没有学到呢 🤔\n试试点击上面的示例问题，或者换个问法吧！',
+        question: ''
+      }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+    }
+  }, 300);
+}
+
+function askSuggestion(q) {
+  document.getElementById('chatInput').value = q;
+  askQuestion();
 }
 
 function renderHistory() {
