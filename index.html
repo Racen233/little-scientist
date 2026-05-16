@@ -1345,7 +1345,88 @@ function countCharMatches(queryChars, kwSet) {
   return count;
 }
 
-// Find best matching answer for a question
+// Topic classification for smarter matching
+var TOPIC_KEYWORDS = {
+  sunlight: ['阳光', '光照', '晒', '阴', '向阳', '喜阳', '喜阴', '耐阴', '直射', '散射'],
+  water: ['浇水', '水分', '湿润', '干燥', '干透', '积水', '涝', '旱', '喷水', '喷雾'],
+  soil: ['土壤', '泥土', '盆土', '土', '沙土', '腐殖', '泥炭', '排水', '透气', '基质'],
+  temperature: ['温度', '耐寒', '耐热', '越冬', '过冬', '度夏', '多少度', '冷', '冻'],
+  fertilizer: ['施肥', '肥料', '复合肥', '有机肥', '液肥', '追肥', '基肥', '磷钾', '氮'],
+  flowering: ['开花', '花期', '开放', '花朵', '花开', '盛开', '开花期', '几月', '季节'],
+  flower_language: ['花语', '象征', '代表', '寓意', '含义', '意思', '意义'],
+  height: ['多高', '高度', '长多', '能长', '厘米', '米高', '尺寸', '大小'],
+  name_origin: ['名字', '由来', '为什么叫', '为什么', '别名', '别称', '俗称', '来源', '得名'],
+  planting: ['种植', '播种', '发芽', '种子', '育苗', '移栽', '扦插', '繁殖', '怎么种'],
+  color: ['颜色', '花色', '红色', '黄色', '蓝色', '紫色', '白色', '粉色', '橙色', '彩色', '什么色'],
+  pruning: ['修剪', '摘心', '打顶', '剪', '摘', '掐'],
+  pest: ['病害', '虫害', '白粉', '蚜虫', '生病', '发黄', '烂根']
+};
+
+// Detect the topic of a question
+function detectTopic(text) {
+  var scores = {};
+  for (var topic in TOPIC_KEYWORDS) {
+    scores[topic] = 0;
+    var kws = TOPIC_KEYWORDS[topic];
+    for (var i = 0; i < kws.length; i++) {
+      if (text.indexOf(kws[i]) >= 0) scores[topic] += kws[i].length;
+    }
+  }
+  var best = { topic: '', score: 0 };
+  for (var t in scores) {
+    if (scores[t] > best.score) { best.topic = t; best.score = scores[t]; }
+  }
+  return best.score > 0 ? best.topic : 'general';
+}
+
+// Pre-compute topic for each QA entry
+(function buildTopicIndex() {
+  for (var i = 0; i < QA_INDEX.length; i++) {
+    var item = QA_INDEX[i];
+    item.topic = detectTopic(item.question + ' ' + item.answer);
+  }
+})();
+
+// Synonym groups for matching (character→meaningful mapping)
+var SYNONYM_MAP = {
+  '土': ['土壤', '泥土', '盆土', '沙土'],
+  '水': ['浇水', '水分', '湿润'],
+  '光': ['阳光', '光照', '日光'],
+  '肥': ['施肥', '肥料', '养分'],
+  '花': ['开花', '花朵', '花期', '花卉'],
+  '种': ['种植', '播种', '种子'],
+  '高': ['高度', '多高', '长高'],
+  '温': ['温度', '温暖', '耐寒'],
+  '日': ['阳光', '日照', '日光', '太阳']
+};
+
+// Get expanded keyword set for a text (including synonyms)
+function expandKeywords(text, kws) {
+  var expanded = {};
+  for (var i = 0; i < kws.words.length; i++) {
+    expanded[kws.words[i]] = true;
+  }
+  for (var j = 0; j < kws.chars.length; j++) {
+    var ch = kws.chars[j];
+    expanded[ch] = true;
+    if (SYNONYM_MAP[ch]) {
+      for (var k = 0; k < SYNONYM_MAP[ch].length; k++) {
+        expanded[SYNONYM_MAP[ch][k]] = true;
+      }
+    }
+  }
+  // Check if any synonym groups match the char
+  for (var s in SYNONYM_MAP) {
+    if (text.indexOf(s) >= 0) {
+      var group = SYNONYM_MAP[s];
+      for (var g = 0; g < group.length; g++) {
+        expanded[group[g]] = true;
+      }
+    }
+  }
+  return Object.keys(expanded);
+}
+
 function findAnswer(question) {
   if (!question || question.trim().length === 0) return null;
 
@@ -1354,13 +1435,29 @@ function findAnswer(question) {
   var qChars = qKeywords.chars;
   var qWords = qKeywords.words;
 
-  // Detect which plant names are mentioned
+  // Detect topic of user's question
+  var qTopic = detectTopic(q);
+
+  // Detect which plant names are mentioned (also check partial matches like 牵牛)
   var mentionedPlants = [];
   PLANTS.forEach(function(p) {
     if (q.indexOf(p.name) >= 0 || q.indexOf(p.eng.toLowerCase()) >= 0) {
       mentionedPlants.push(p);
     }
   });
+  // If no exact plant match, try partial name matching (e.g., "牵牛" for "牵牛花")
+  if (mentionedPlants.length === 0) {
+    PLANTS.forEach(function(p) {
+      // Try matching first 2 characters of the plant name
+      var shortName = p.name.substring(0, 2);
+      if (shortName.length >= 2 && q.indexOf(shortName) >= 0) {
+        mentionedPlants.push(p);
+      }
+    });
+  }
+
+  // Expand user's query keywords with synonyms
+  var qExpanded = expandKeywords(q, qKeywords);
 
   // Score each QA item
   var scored = QA_INDEX.map(function(item) {
@@ -1369,29 +1466,55 @@ function findAnswer(question) {
     // Big bonus if user mentioned this plant name
     if (mentionedPlants.length > 0) {
       var isMentioned = mentionedPlants.some(function(p) { return p.id === item.plantId; });
-      if (isMentioned) score += 20;
+      if (isMentioned) score += 30;
     }
 
-    // Check keyword overlap in question
+    // Topic boost: if question topic matches entry topic
+    if (qTopic !== 'general' && item.topic === qTopic) {
+      score += 25;
+    } else if (qTopic !== 'general') {
+      // Minor penalty for topic mismatch (reduces wrong answers)
+      score -= 8;
+    }
+
+    // Check expanded keyword overlap
+    for (var i = 0; i < qExpanded.length; i++) {
+      var term = qExpanded[i];
+      if (term.length < 2) continue;
+      if (hasKeyword(item.qKeywords, term)) {
+        score += term.length * 3;
+      } else if (hasKeyword(item.aKeywords, term)) {
+        score += term.length * 2;
+      }
+    }
+
+    // Direct word overlap (original matching)
     for (var i = 0; i < qWords.length; i++) {
       var w = qWords[i];
       if (w.length < 2) continue;
       if (hasKeyword(item.qKeywords, w)) {
-        // Longer word match = more specific
-        score += w.length * 2;
-      }
-      if (hasKeyword(item.aKeywords, w)) {
         score += w.length;
       }
     }
 
-    // Character-level matching (for partial matches)
+    // Character-level matching with synonym awareness
     var qCharScore = countCharMatches(qChars, item.qKeywords);
     var aCharScore = countCharMatches(qChars, item.aKeywords);
-    score += qCharScore * 1.5;
+    score += qCharScore * 1.0;
     score += aCharScore * 0.5;
 
-    // Boost if user's question contains question words
+    // Check if any single important char matches (土, 水, 光 etc.)
+    for (var c = 0; c < qChars.length; c++) {
+      var ch = qChars[c];
+      // Check if this single char appears in the entry's text
+      if (ch === '土' || ch === '水' || ch === '光' || ch === '肥' || ch === '花') {
+        if (item.question.indexOf(ch) >= 0 || item.answer.indexOf(ch) >= 0) {
+          score += 5;
+        }
+      }
+    }
+
+    // Boost if user's question contains question words matching entry
     var questionWords = ['什么', '怎么', '为什么', '如何', '多久', '多少', '几', '吗', '能', '可以', '会', '是不是', '有没有'];
     for (var j = 0; j < questionWords.length; j++) {
       if (q.indexOf(questionWords[j]) >= 0) {
@@ -1402,11 +1525,17 @@ function findAnswer(question) {
       }
     }
 
-    // Bonus for matching longer segments (substring match)
-    if (item.question.indexOf(q) >= 0) score += 30;
-    // Check partial question match (first 4 chars)
-    if (q.length >= 4 && item.question.indexOf(q.substring(0, 4)) >= 0) score += 15;
-    if (q.length >= 6 && item.question.indexOf(q.substring(0, 6)) >= 0) score += 20;
+    // Bonus for overlapping substring match (longer = better)
+    var maxSubLen = 0;
+    for (var si = 0; si < q.length - 1; si++) {
+      for (var sj = si + 2; sj <= q.length && sj - si <= 10; sj++) {
+        var sub = q.substring(si, sj);
+        if (item.question.indexOf(sub) >= 0) {
+          maxSubLen = Math.max(maxSubLen, sub.length);
+        }
+      }
+    }
+    score += maxSubLen * 3;
 
     return { item: item, score: score };
   });
@@ -1415,7 +1544,7 @@ function findAnswer(question) {
   scored.sort(function(a, b) { return b.score - a.score; });
 
   // Return best match if score is meaningful
-  if (scored.length > 0 && scored[0].score >= 1) {
+  if (scored.length > 0 && scored[0].score >= 5) {
     return scored[0].item;
   }
 
