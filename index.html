@@ -1362,19 +1362,19 @@ function countCharMatches(queryChars, kwSet) {
 
 // Topic classification for smarter matching
 var TOPIC_KEYWORDS = {
-  sunlight: ['阳光', '光照', '晒', '阴', '向阳', '喜阳', '喜阴', '耐阴', '直射', '散射'],
-  water: ['浇水', '水分', '湿润', '干燥', '干透', '积水', '涝', '旱', '喷水', '喷雾'],
-  soil: ['土壤', '泥土', '盆土', '土', '沙土', '腐殖', '泥炭', '排水', '透气', '基质'],
-  temperature: ['温度', '耐寒', '耐热', '越冬', '过冬', '度夏', '多少度', '冷', '冻'],
-  fertilizer: ['施肥', '肥料', '复合肥', '有机肥', '液肥', '追肥', '基肥', '磷钾', '氮'],
-  flowering: ['开花', '花期', '开放', '花朵', '花开', '盛开', '开花期', '几月', '季节'],
-  flower_language: ['花语', '象征', '代表', '寓意', '含义', '意思', '意义'],
-  height: ['多高', '高度', '长多', '能长', '厘米', '米高', '尺寸', '大小'],
-  name_origin: ['名字', '由来', '为什么叫', '为什么', '别名', '别称', '俗称', '来源', '得名'],
-  planting: ['种植', '播种', '发芽', '种子', '育苗', '移栽', '扦插', '繁殖', '怎么种'],
-  color: ['颜色', '花色', '红色', '黄色', '蓝色', '紫色', '白色', '粉色', '橙色', '彩色', '什么色'],
-  pruning: ['修剪', '摘心', '打顶', '剪', '摘', '掐'],
-  pest: ['病害', '虫害', '白粉', '蚜虫', '生病', '发黄', '烂根']
+  sunlight: ['阳光', '光照', '晒', '阴', '向阳', '喜阳', '喜阴', '耐阴', '直射', '散射', '光线', '向阳'],
+  water: ['浇水', '水分', '湿润', '干燥', '干透', '积水', '涝', '旱', '喷水', '喷雾', '湿度', '水份'],
+  soil: ['土壤', '泥土', '盆土', '土', '沙土', '腐殖', '泥炭', '排水', '透气', '基质', '土质', '培土'],
+  temperature: ['温度', '耐寒', '耐热', '越冬', '过冬', '度夏', '多少度', '冷', '冻', '气温', '降温', '保暖'],
+  fertilizer: ['施肥', '肥料', '复合肥', '有机肥', '液肥', '追肥', '基肥', '磷钾', '氮', '养分', '营养', '肥力'],
+  flowering: ['开花', '花期', '开放', '花朵', '花开', '盛开', '开花期', '几月', '季节', '绽放', '花季'],
+  flower_language: ['花语', '象征', '代表', '寓意', '含义', '意思', '意义', '象征意义'],
+  height: ['多高', '高度', '长多', '能长', '厘米', '米高', '尺寸', '大小', '能长到', '多长'],
+  name_origin: ['名字', '由来', '为什么叫', '为什么', '别名', '别称', '俗称', '来源', '得名', '名字来源'],
+  planting: ['种植', '播种', '发芽', '种子', '育苗', '移栽', '扦插', '繁殖', '怎么种', '培育', '怎么育苗'],
+  color: ['颜色', '花色', '红色', '黄色', '蓝色', '紫色', '白色', '粉色', '橙色', '彩色', '什么色', '色彩', '色泽'],
+  pruning: ['修剪', '摘心', '打顶', '剪', '摘', '掐', '整形', '剪枝', '剪掉', '摘除'],
+  pest: ['病害', '虫害', '白粉', '蚜虫', '生病', '发黄', '烂根', '枯萎', '霉', '虫子', '腐烂', '防治']
 };
 
 // Detect the topic of a question
@@ -1404,15 +1404,24 @@ function detectTopic(text) {
 
 // Synonym groups for matching (character→meaningful mapping)
 var SYNONYM_MAP = {
-  '土': ['土壤', '泥土', '盆土', '沙土'],
-  '水': ['浇水', '水分', '湿润'],
-  '光': ['阳光', '光照', '日光'],
-  '肥': ['施肥', '肥料', '养分'],
-  '花': ['开花', '花朵', '花期', '花卉'],
-  '种': ['种植', '播种', '种子'],
-  '高': ['高度', '多高', '长高'],
-  '温': ['温度', '温暖', '耐寒'],
-  '日': ['阳光', '日照', '日光', '太阳']
+  '土': ['土壤', '泥土', '盆土', '沙土', '腐殖', '土质'],
+  '水': ['浇水', '水分', '湿润', '湿度', '潮湿'],
+  '光': ['阳光', '光照', '日光', '光线', '日照'],
+  '肥': ['施肥', '肥料', '养分', '营养', '追肥'],
+  '花': ['开花', '花朵', '花期', '花卉', '花色', '花瓣'],
+  '种': ['种植', '播种', '种子', '品种', '育苗', '育种'],
+  '高': ['高度', '多高', '长高', '多长', '尺寸'],
+  '温': ['温度', '温暖', '耐寒', '耐热', '气温', '冷暖'],
+  '日': ['阳光', '日照', '日光', '太阳', '光照'],
+  '耐': ['耐寒', '耐热', '耐旱', '耐阴', '耐贫瘠', '耐受'],
+  '干': ['干燥', '干旱', '干透', '偏干', '缺水', '干枯'],
+  '湿': ['湿润', '潮湿', '积水', '湿度', '水涝'],
+  '病': ['病害', '生病', '白粉', '虫害', '枯萎', '腐烂', '发黄'],
+  '叶': ['叶子', '叶片', '叶面', '叶脉', '叶插'],
+  '根': ['根系', '根部', '烂根', '主根', '须根'],
+  '剪': ['修剪', '剪枝', '摘心', '打顶', '剪掉', '摘除'],
+  '颜': ['颜色', '花色', '彩色', '色彩', '色泽'],
+  '香': ['香味', '香气', '芬芳', '清香', '花香']
 };
 
 // Get expanded keyword set for a text (including synonyms)
@@ -1478,10 +1487,19 @@ function findAnswer(question) {
   var scored = QA_INDEX.map(function(item) {
     var score = 0;
 
+    // Big bonus for exact question match
+    var quests = item.questions || [item.question];
+    for (var qi = 0; qi < quests.length; qi++) {
+      if (quests[qi] && quests[qi] === q) {
+        score += 100;
+        break;
+      }
+    }
+
     // Big bonus if user mentioned this plant name
     if (mentionedPlants.length > 0) {
       var isMentioned = mentionedPlants.some(function(p) { return p.id === item.plantId; });
-      if (isMentioned) score += 30;
+      if (isMentioned) score += 40;
     }
 
     // Topic boost: if question topic matches entry topic
@@ -1509,6 +1527,22 @@ function findAnswer(question) {
       if (w.length < 2) continue;
       if (hasKeyword(item.qKeywords, w)) {
         score += w.length;
+      }
+    }
+
+    // Bi-gram matching: consecutive 2-char Chinese sequences
+    var bigrams = {};
+    for (var bi = 0; bi < qChars.length - 1; bi++) {
+      var bg = qChars[bi] + qChars[bi + 1];
+      bigrams[bg] = true;
+    }
+    var qs = item.questions || [item.question];
+    for (var bg in bigrams) {
+      for (var qi = 0; qi < qs.length; qi++) {
+        if (qs[qi] && qs[qi].indexOf(bg) >= 0) {
+          score += 3;
+          break;
+        }
       }
     }
 
@@ -1543,7 +1577,7 @@ function findAnswer(question) {
     // Bonus for overlapping substring match (longer = better)
     var maxSubLen = 0;
     for (var si = 0; si < q.length - 1; si++) {
-      for (var sj = si + 2; sj <= q.length && sj - si <= 10; sj++) {
+      for (var sj = si + 2; sj <= q.length && sj - si <= 8; sj++) {
         var sub = q.substring(si, sj);
         if (item.question.indexOf(sub) >= 0) {
           maxSubLen = Math.max(maxSubLen, sub.length);
