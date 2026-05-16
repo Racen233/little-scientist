@@ -542,6 +542,21 @@
     text-align: right;
   }
   .chat-msg.user .msg-time { color: rgba(255,255,255,0.5); }
+  .chat-msg .msg-search {
+    margin-top: 6px;
+    text-align: right;
+  }
+  .chat-msg .msg-search a {
+    display: inline-block;
+    font-size: 11px;
+    color: #43A047;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: #E8F5E9;
+    transition: all 0.2s;
+  }
+  .chat-msg .msg-search a:hover { background: #C8E6C9; }
   .chat-input-area {
     display: flex;
     gap: 8px;
@@ -1659,7 +1674,7 @@ function askQuestion() {
     addChatMessage('bot', {
       answer: '🌱 抱歉，我只了解这10种植物和植物科普知识哦～\n\n你可以问我关于这些花花草草的问题：\n🌸 牵牛花 · 🌺 波斯菊 · ⭐ 满天星\n💙 矢车菊 · 🌼 百日草 · 🌷 凤仙花\n🌻 金盏菊 · 🌻 向日葵 · 💜 翠菊 · ❤️ 鸡冠花\n\n试试点击上面的示例问题吧！',
       question: ''
-    }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+    }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手', searchQuery: question });
     return;
   }
 
@@ -1670,7 +1685,8 @@ function askQuestion() {
       addChatMessage('bot', { answer: result.answer, question: result.question }, {
         plantColor: result.plantColor,
         plantEmoji: result.plantEmoji,
-        plantName: result.plantName
+        plantName: result.plantName,
+        searchQuery: question
       });
       return;
     }
@@ -1693,7 +1709,7 @@ function askQuestion() {
     addChatMessage('bot', {
       answer: answer,
       question: ''
-    }, { plantColor: '#43A047', plantEmoji: '🤖', plantName: 'AI小助手' });
+    }, { plantColor: '#43A047', plantEmoji: '🤖', plantName: 'AI小助手', searchQuery: question });
   }).catch(function(err) {
     console.error('Worker AI Error:', err);
     var indicator = document.getElementById('typingIndicator');
@@ -1701,7 +1717,7 @@ function askQuestion() {
     addChatMessage('bot', {
       answer: '我暂时没找到这个问题的答案...\n试试下面的示例问题，或者换个问法？',
       question: ''
-    }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+    }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手', searchQuery: question });
   });
 }
 
@@ -1740,7 +1756,8 @@ function addChatMessage(type, content, plantInfo) {
       plantInfo.plantEmoji + ' ' + plantInfo.plantName + '</span>' +
       '<div class="msg-text">' + escapeHtml(content.answer || content) + '</div>' +
       (content.question ? '<span class="qa-source">参考: ' + escapeHtml(content.question) + '</span>' : '') +
-      '<div class="msg-time">' + timeStr + '</div>';
+      '<div class="msg-time">' + timeStr + '</div>' +
+      (plantInfo.searchQuery ? '<div class="msg-search"><a href="https://www.baidu.com/s?wd=' + encodeURIComponent(plantInfo.searchQuery) + '" target="_blank" rel="noopener">🔍 联网搜索了解更多</a></div>' : '');
   } else {
     div.innerHTML = '<div class="msg-text">' + escapeHtml(content) + '</div><div class="msg-time">' + timeStr + '</div>';
   }
