@@ -407,6 +407,91 @@
   /* ====== Q&A Chat ====== */
   .qa-chat { padding: 0 16px 20px; display: none; flex-direction: column; }
   .qa-chat.show { display: flex; }
+  .qa-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .qa-header-bar h2 { font-size: 18px; font-weight: 700; }
+  .qa-settings-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #E8F5E9;
+    color: #43A047;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .qa-settings-btn:active { background: #C8E6C9; }
+  .qa-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    margin-left: 6px;
+  }
+  .qa-status.on { background: #E8F5E9; color: #43A047; }
+  .qa-status.off { background: #FFF3E0; color: #FF9800; }
+
+  /* Settings Modal */
+  .settings-modal .modal-box { text-align: left; }
+  .settings-modal .modal-box h2 { text-align: center; }
+  .settings-modal label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2D3436;
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+  .settings-modal label:first-of-type { margin-top: 0; }
+  .settings-modal .hint {
+    font-size: 11px;
+    color: #90A490;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .settings-modal select, .settings-modal input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #E8F0E8;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+  .settings-modal input:focus, .settings-modal select:focus { border-color: #81C784; }
+  .settings-modal .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .settings-modal .btn-row button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .settings-modal .btn-save { background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; }
+  .settings-modal .btn-cancel { background: #F5F5F5; color: #636E72; }
+  .settings-modal .model-info {
+    background: #F5FBF5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #636E72;
+    line-height: 1.5;
+  }
   .chat-messages {
     background: #fff;
     border-radius: 16px;
@@ -643,8 +728,13 @@
 <!-- Section: Smart Q&A Chat -->
 <div class="qa-chat" id="tabQA">
   <div class="section-header">
-    <h2>🤖 我来回答</h2>
-    <span>向小助手提问吧</span>
+    <div class="qa-header-bar">
+      <h2>🤖 我来回答</h2>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span class="qa-status off" id="qaStatus">关键词</span>
+        <button class="qa-settings-btn" onclick="openQASettings()">⚙️</button>
+      </div>
+    </div>
   </div>
   <div class="chat-messages" id="chatMessages">
     <div class="chat-welcome" id="chatWelcome">
@@ -718,6 +808,51 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Q&A Settings Modal -->
+<div class="modal-overlay settings-modal" id="qaSettingsModal">
+  <div class="modal-box">
+    <h2>⚙️ 智能问答设置</h2>
+    <p style="font-size:13px;color:#636E72;text-align:center;margin-bottom:16px">接入大模型后可获得更智能的回答</p>
+
+    <label>AI 服务提供商</label>
+    <select id="aiProvider" onchange="toggleProviderFields()">
+      <option value="none">不使用（关键词匹配）</option>
+      <option value="huggingface">Hugging Face（免费·开源）</option>
+      <option value="openrouter">OpenRouter（免费额度）</option>
+    </select>
+
+    <div id="hfSettings">
+      <label>Hugging Face API Token</label>
+      <div class="hint">在 huggingface.co/settings/tokens 创建免费 Token</div>
+      <input type="password" id="hfToken" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+    </div>
+
+    <div id="orSettings" style="display:none">
+      <label>OpenRouter API Key</label>
+      <div class="hint">在 openrouter.ai/keys 创建免费 Key（赠送 $1 额度）</div>
+      <input type="password" id="orToken" placeholder="sk-or-v1-xxxxxxxxxxxxxxxx">
+    </div>
+
+    <div id="aiModelRow">
+      <label>模型选择</label>
+      <select id="aiModel">
+        <option value="Qwen/Qwen2.5-1.5B-Instruct">Qwen2.5-1.5B（轻量·快速）</option>
+        <option value="Qwen/Qwen2.5-7B-Instruct" selected>Qwen2.5-7B（推荐·均衡）</option>
+        <option value="microsoft/Phi-3-mini-4k-instruct">Phi-3-mini（微软·轻量）</option>
+      </select>
+    </div>
+
+    <div class="model-info">
+      💡 <strong>模型说明：</strong>Hugging Face 的 <strong>Qwen2.5</strong> 是开源中英双语模型，对中文问题理解力强。免费用户有速率限制，稍慢但可用。需要 Hugging Face 账号。
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeQASettings()">取消</button>
+      <button class="btn-save" onclick="saveQASettings()">保存设置</button>
+    </div>
+  </div>
+</div>
 
 <!-- Name Modal (first visit) -->
 <div class="modal-overlay" id="nameModal">
@@ -898,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderPlantList();
   renderPlantSelect();
   renderSuggestions();
+  updateQAStatus();
   setDefaultDate();
   renderHistory();
 
@@ -1239,6 +1375,298 @@ function findAnswer(question) {
   return null;
 }
 
+// ======== LLM Integration & Question Filter ========
+// Plant-related keywords for filtering
+var PLANT_KEYWORDS = [
+  // 10 plant names
+  '牵牛花', '波斯菊', '满天星', '矢车菊', '百日草',
+  '凤仙花', '金盏菊', '向日葵', '翠菊', '鸡冠花',
+  '喇叭花', '指甲花', '急性子', '朝颜',
+  'morning glory', 'cosmos', 'baby\'s breath', 'cornflower',
+  'zinnia', 'impatiens', 'calendula', 'sunflower', 'china aster', 'cockscomb',
+  // Plant science keywords
+  '种子', '发芽', '开花', '结果', '生长', '种植',
+  '浇水', '阳光', '光照', '温度', '土壤', '施肥',
+  '花期', '花语', '植物', '花朵', '叶子', '根',
+  '花瓣', '花心', '花粉', '花蜜', '盆栽',
+  '园艺', '播种', '育苗', '移栽', '扦插',
+  '耐寒', '耐旱', '耐阴', '喜阳', '喜阴',
+  '病虫害', '肥料', '有机', '花期', '多年生',
+  // Nature/science
+  '光合作用', '大自然', '生命', '生长',
+  '为什么', '怎么种', '怎么养', '如何种', '如何养',
+  '几天', '多久', '多少天', '什么时候',
+  '颜色', '香味', '大小', '高度'
+];
+
+// Question filter - is this question about plants?
+function isPlantRelated(question) {
+  var q = question.toLowerCase();
+  // Check exact plant names and keywords
+  for (var i = 0; i < PLANT_KEYWORDS.length; i++) {
+    if (q.indexOf(PLANT_KEYWORDS[i].toLowerCase()) >= 0) return true;
+  }
+  // Check general question patterns
+  var patterns = ['是花', '是植物', '种花', '养花', '种植物', '花的', '植物的'];
+  for (var j = 0; j < patterns.length; j++) {
+    if (q.indexOf(patterns[j]) >= 0) return true;
+  }
+  return false;
+}
+
+// ========== LLM Settings ==========
+function getLLMSettings() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PREFIX + 'llm_settings') || '{}'); } catch { return {}; }
+}
+function saveLLMSettings(settings) {
+  localStorage.setItem(STORAGE_KEY_PREFIX + 'llm_settings', JSON.stringify(settings));
+}
+
+function getLLMProvider() { var s = getLLMSettings(); return s.provider || 'none'; }
+function getLLMToken() {
+  var s = getLLMSettings();
+  if (s.provider === 'huggingface') return s.hfToken || '';
+  if (s.provider === 'openrouter') return s.orToken || '';
+  return '';
+}
+function getLLMModel() { var s = getLLMSettings(); return s.model || ''; }
+function isLLMEnabled() { return getLLMProvider() !== 'none' && getLLMToken().length > 0; }
+
+// System prompt for LLM
+var LLM_SYSTEM_PROMPT = '你是一个专门回答植物问题的儿童科普助手。回答规则：\n\
+1. 只回答关于以下10种植物的养护、知识、特点等问题：牵牛花、波斯菊、满天星、矢车菊、百日草、凤仙花、金盏菊、向日葵、翠菊、鸡冠花\n\
+2. 也回答一般的植物科普问题（如：为什么植物需要阳光？种子怎么发芽？）\n\
+3. 如果问题与这10种植物或植物科普无关，请礼貌回答："抱歉，我只了解这10种植物和植物科普知识哦～你可以问我关于牵牛花、向日葵它们的问题！"\n\
+4. 回答要有趣、生动、适合儿童理解，使用中文\n\
+5. 如果问题涉及具体的种植养护，给出实用、安全的建议\n\
+6. 回答不要太长，100字以内';
+
+// Call Hugging Face Inference API
+async function callHuggingFace(token, model, question) {
+  var url = 'https://api-inference.huggingface.co/models/' + model;
+  var prompt = LLM_SYSTEM_PROMPT + '\n\n问题：' + question + '\n回答：';
+
+  var response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      parameters: { max_new_tokens: 300, temperature: 0.7, top_p: 0.9 }
+    })
+  });
+
+  if (!response.ok) {
+    var errText = await response.text();
+    throw new Error('HF API Error: ' + response.status + ' ' + errText);
+  }
+
+  var data = await response.json();
+  if (Array.isArray(data) && data.length > 0) {
+    return data[0].generated_text.replace(prompt, '').trim();
+  }
+  if (data.generated_text) {
+    return data.generated_text.replace(prompt, '').trim();
+  }
+  throw new Error('Unexpected HF API response');
+}
+
+// Call OpenRouter API
+async function callOpenRouter(token, model, question) {
+  var prompt = LLM_SYSTEM_PROMPT + '\n\n问题：' + question + '\n回答：';
+
+  var response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://racen233.github.io/little-scientist/',
+      'X-Title': '小小科学家'
+    },
+    body: JSON.stringify({
+      model: model || 'microsoft/phi-3-mini-4k-instruct:free',
+      messages: [
+        { role: 'system', content: LLM_SYSTEM_PROMPT },
+        { role: 'user', content: question }
+      ],
+      max_tokens: 300,
+      temperature: 0.7
+    })
+  });
+
+  if (!response.ok) {
+    var errText = await response.text();
+    throw new Error('OpenRouter Error: ' + response.status + ' ' + errText);
+  }
+
+  var data = await response.json();
+  if (data.choices && data.choices.length > 0) {
+    return data.choices[0].message.content.trim();
+  }
+  throw new Error('Unexpected OpenRouter response');
+}
+
+// Ask LLM with question
+async function askLLM(question) {
+  var provider = getLLMProvider();
+  var token = getLLMToken();
+  var model = getLLMModel();
+
+  if (provider === 'huggingface') {
+    if (!model) model = 'Qwen/Qwen2.5-7B-Instruct';
+    return await callHuggingFace(token, model, question);
+  } else if (provider === 'openrouter') {
+    if (!model) model = 'microsoft/phi-3-mini-4k-instruct:free';
+    return await callOpenRouter(token, model, question);
+  }
+  throw new Error('No LLM provider configured');
+}
+
+// ========== Settings UI ==========
+function openQASettings() {
+  var s = getLLMSettings();
+  document.getElementById('aiProvider').value = s.provider || 'none';
+  document.getElementById('hfToken').value = s.hfToken || '';
+  document.getElementById('orToken').value = s.orToken || '';
+  document.getElementById('aiModel').value = s.model || 'Qwen/Qwen2.5-7B-Instruct';
+  toggleProviderFields();
+  document.getElementById('qaSettingsModal').classList.add('show');
+}
+
+function closeQASettings() {
+  document.getElementById('qaSettingsModal').classList.remove('show');
+}
+
+function toggleProviderFields() {
+  var p = document.getElementById('aiProvider').value;
+  document.getElementById('hfSettings').style.display = p === 'huggingface' ? 'block' : 'none';
+  document.getElementById('orSettings').style.display = p === 'openrouter' ? 'block' : 'none';
+  document.getElementById('aiModelRow').style.display = p === 'none' ? 'none' : 'block';
+}
+
+function saveQASettings() {
+  var provider = document.getElementById('aiProvider').value;
+  var hfToken = document.getElementById('hfToken').value.trim();
+  var orToken = document.getElementById('orToken').value.trim();
+  var model = document.getElementById('aiModel').value;
+
+  saveLLMSettings({ provider: provider, hfToken: hfToken, orToken: orToken, model: model });
+  closeQASettings();
+  updateQAStatus();
+  showToast('✅ 设置已保存！');
+}
+
+function updateQAStatus() {
+  var status = document.getElementById('qaStatus');
+  if (isLLMEnabled()) {
+    status.textContent = 'AI ' + (getLLMProvider() === 'huggingface' ? '🤗' : '🔄');
+    status.className = 'qa-status on';
+  } else {
+    status.textContent = '关键词';
+    status.className = 'qa-status off';
+  }
+}
+
+// Override askSuggestion to use new flow
+function askSuggestion(q) {
+  document.getElementById('chatInput').value = q;
+  askQuestion();
+}
+
+// Modified askQuestion with LLM and filtering
+function askQuestion() {
+  var input = document.getElementById('chatInput');
+  var question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+
+  // Show user's question
+  addChatMessage('user', question);
+
+  // Show typing indicator
+  var container = document.getElementById('chatMessages');
+  var typing = document.createElement('div');
+  typing.className = 'chat-msg bot';
+  typing.id = 'typingIndicator';
+  typing.innerHTML = '<div class="msg-text">🤔 思考中...</div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  // Question filter - check if related to plants
+  if (!isPlantRelated(question)) {
+    setTimeout(function() {
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      addChatMessage('bot', {
+        answer: '🌱 抱歉，我只了解这10种植物和植物科普知识哦～\n\n你可以问我关于这些花花草草的问题：\n🌸 牵牛花 · 🌺 波斯菊 · ⭐ 满天星\n💙 矢车菊 · 🌼 百日草 · 🌷 凤仙花\n🌻 金盏菊 · 🌻 向日葵 · 💜 翠菊 · ❤️ 鸡冠花\n\n试试点击上面的示例问题吧！',
+        question: ''
+      }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+    }, 200);
+    return;
+  }
+
+  // Try LLM if enabled
+  if (isLLMEnabled()) {
+    askLLM(question).then(function(answer) {
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      addChatMessage('bot', {
+        answer: answer,
+        question: ''
+      }, { plantColor: '#43A047', plantEmoji: '🤖', plantName: 'AI小助手' });
+    }).catch(function(err) {
+      console.error('LLM Error:', err);
+      // Fallback to keyword matching
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      var result = findAnswer(question);
+      if (result) {
+        addChatMessage('bot', { answer: result.answer, question: result.question }, {
+          plantColor: result.plantColor,
+          plantEmoji: result.plantEmoji,
+          plantName: result.plantName
+        });
+      } else {
+        addChatMessage('bot', {
+          answer: '我暂时没找到这个问题的答案...\n试试下面的示例问题，或者换个问法？',
+          question: ''
+        }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+      }
+    });
+    return;
+  }
+
+  // Fallback: keyword matching
+  setTimeout(function() {
+    try {
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      var result = findAnswer(question);
+      if (result) {
+        addChatMessage('bot', { answer: result.answer, question: result.question }, {
+          plantColor: result.plantColor,
+          plantEmoji: result.plantEmoji,
+          plantName: result.plantName
+        });
+      } else {
+        addChatMessage('bot', {
+          answer: '我暂时没找到这个问题的答案...\n试试下面的示例问题，或者换个问法？',
+          question: ''
+        }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
+      }
+    } catch(e) {
+      var indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+      addChatMessage('bot', {
+        answer: 'Oops！出了点小问题：' + e.message,
+        question: ''
+      }, { plantColor: '#E53935', plantEmoji: '⚠️', plantName: '报错' });
+    }
+  }, 300);
+}
+
 // Suggestion questions
 var SUGGESTIONS = [
   '向日葵需要多少阳光？',
@@ -1281,56 +1709,6 @@ function addChatMessage(type, content, plantInfo) {
 
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
-}
-
-function askQuestion() {
-  var input = document.getElementById('chatInput');
-  var question = input.value.trim();
-  if (!question) return;
-  input.value = '';
-
-  // Show user's question
-  addChatMessage('user', question);
-
-  // Show typing indicator briefly
-  var container = document.getElementById('chatMessages');
-  var typing = document.createElement('div');
-  typing.className = 'chat-msg bot';
-  typing.id = 'typingIndicator';
-  typing.innerHTML = '<div class="msg-text">🤔 思考中...</div>';
-  container.appendChild(typing);
-  container.scrollTop = container.scrollHeight;
-
-  // Find answer (with tiny delay for UX)
-  setTimeout(function() {
-    try {
-      var indicator = document.getElementById('typingIndicator');
-      if (indicator) indicator.remove();
-      var result = findAnswer(question);
-      if (result) {
-        addChatMessage('bot', { answer: result.answer, question: result.question }, {
-          plantColor: result.plantColor,
-          plantEmoji: result.plantEmoji,
-          plantName: result.plantName
-        });
-      } else {
-        addChatMessage('bot', {
-          answer: '我暂时没找到这个问题的答案...\n试试下面的示例问题，或者换个问法？',
-          question: ''
-        }, { plantColor: '#90A490', plantEmoji: '🌱', plantName: '小助手' });
-      }
-    } catch(e) {
-      addChatMessage('bot', {
-        answer: 'Oops！出了点小问题，请截屏告诉老师:\n' + e.message,
-        question: ''
-      }, { plantColor: '#E53935', plantEmoji: '⚠️', plantName: '报错' });
-    }
-  }, 300);
-}
-
-function askSuggestion(q) {
-  document.getElementById('chatInput').value = q;
-  askQuestion();
 }
 
 function renderHistory() {
