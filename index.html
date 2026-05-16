@@ -1499,7 +1499,12 @@ function findAnswer(question) {
     // Big bonus if user mentioned this plant name
     if (mentionedPlants.length > 0) {
       var isMentioned = mentionedPlants.some(function(p) { return p.id === item.plantId; });
-      if (isMentioned) score += 40;
+      if (isMentioned) {
+        score += 60;
+      } else if (mentionedPlants.length === 1) {
+        // Penalty if user clearly names a different plant
+        score -= 40;
+      }
     }
 
     // Topic boost: if question topic matches entry topic
@@ -1593,20 +1598,59 @@ function findAnswer(question) {
   scored.sort(function(a, b) { return b.score - a.score; });
 
   // Return best match if score is meaningful
-  if (scored.length > 0 && scored[0].score >= 5) {
+  if (scored.length > 0 && scored[0].score >= 20) {
+    // If user mentioned a specific plant, prefer answer for that plant
+    if (mentionedPlants.length === 1) {
+      var topIsCorrect = mentionedPlants.some(function(p) { return p.id === scored[0].item.plantId; });
+      if (!topIsCorrect) {
+        // Look for the best entry for the correct plant within top 20
+        var correctPlant = mentionedPlants[0];
+        for (var si = 1; si < scored.length && si < 20; si++) {
+          if (scored[si].item.plantId === correctPlant.id) {
+            return scored[si].item;
+          }
+        }
+      }
+    }
     return scored[0].item;
   }
 
-  // Fallback: if plant was mentioned but no good match, return general info
+  // Fallback: if plant was mentioned but no good match, return first relevant entry
   if (mentionedPlants.length > 0) {
     var plant = mentionedPlants[0];
+    // Find first entry for this plant that contains the most question words
+    var bestEntry = null;
+    for (var fi = 0; fi < plant.qa.length; fi++) {
+      var entry = plant.qa[fi];
+      if (entry.q && q.indexOf(entry.q.substring(0, 2)) >= 0) {
+        bestEntry = entry;
+        break;
+      }
+    }
+    if (!bestEntry) {
+      // Try to find an answer by detecting topic
+      var topicMatch = detectTopic(q);
+      if (topicMatch !== 'general') {
+        for (var fi = 0; fi < plant.qa.length; fi++) {
+          var entry = plant.qa[fi];
+          if (entry.q && entry.q.indexOf(topicMatch) >= 0) {
+            bestEntry = entry;
+            break;
+          }
+        }
+      }
+    }
+    if (!bestEntry) {
+      // If no topic match, return a helpful message
+      return null;
+    }
     return {
       plantId: plant.id,
       plantName: plant.name,
       plantEmoji: plant.emoji,
       plantColor: plant.color,
-      question: plant.name + '的基本信息',
-      answer: plant.qa.map(function(qa) { return qa.a; }).join(' ')
+      question: bestEntry.q,
+      answer: bestEntry.a
     };
   }
 
