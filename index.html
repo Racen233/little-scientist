@@ -727,7 +727,7 @@
 <!-- Tab Bar -->
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="knowledge">🌿 知识问答</button>
-  <button class="tab-btn" data-tab="qa">🤖 智能问答</button>
+  <button class="tab-btn" data-tab="qa">💬 问答</button>
   <button class="tab-btn" data-tab="growth">📸 成长记录</button>
 </div>
 
@@ -744,7 +744,7 @@
 <div class="qa-chat" id="tabQA">
   <div class="section-header">
     <div class="qa-header-bar">
-      <h2>🤖 我来回答</h2>
+      <h2>📚 问答</h2>
       <div style="display:flex;align-items:center;gap:4px">
         <span class="qa-status off" id="qaStatus">关键词</span>
         <button class="qa-settings-btn" onclick="openQASettings()">⚙️</button>
@@ -754,7 +754,7 @@
   <div class="chat-messages" id="chatMessages">
     <div class="chat-welcome" id="chatWelcome">
       <div class="icon">🌻</div>
-      <p>你好！我是植物小助手 🤖<br>关于这10种植物，你有什么想知道的吗？<br>试试问我吧！</p>
+      <p>你好！我是植物小助手 🌱<br>关于这10种植物，你有什么想知道的吗？<br>试试问我吧！</p>
     </div>
   </div>
   <div class="chat-suggestions" id="chatSuggestions"></div>
@@ -827,7 +827,7 @@
 <!-- Q&A Settings Modal -->
 <div class="modal-overlay settings-modal" id="qaSettingsModal">
   <div class="modal-box">
-    <h2>🤖 智能问答</h2>
+    <h2>📚 问答</h2>
     <p style="font-size:13px;color:#636E72;text-align:center;margin-bottom:16px">AI 大模型已内置，无需配置，即开即用！</p>
 
     <div style="background:#E8F5E9;border-radius:12px;padding:16px;margin-bottom:16px">
@@ -1078,7 +1078,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderSuggestions();
   // AI is always on via Cloudflare Worker
   var qs = document.getElementById('qaStatus');
-  if (qs) { qs.textContent = '智能AI'; qs.className = 'qa-status on'; }
+  if (qs) { qs.textContent = '知识库'; qs.className = 'qa-status on'; }
   setDefaultDate();
   renderHistory();
 
@@ -1787,7 +1787,7 @@ function askQuestion() {
     addChatMessage('bot', {
       answer: answer,
       question: ''
-    }, { plantColor: '#43A047', plantEmoji: '🤖', plantName: 'AI小助手', searchQuery: question });
+    }, { plantColor: '#43A047', plantEmoji: '🌱', plantName: '小助手', searchQuery: question });
   }).catch(function(err) {
     console.error('Worker AI Error:', err);
     var indicator = document.getElementById('typingIndicator');
